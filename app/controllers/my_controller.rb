@@ -1,9 +1,7 @@
-require 'rest-client'
-
 class MyController < ApplicationController
   def translate_file
     # Create a new OpenAI client object
-    client = OpenAI::Client.new
+    client = OpenAI::Client.new(access_token: ENV['OPENAI_ACCESS_TOKEN'])
 
     # Open the audio file using File.open
     audio_path = Rails.root.join("app", "assets", "public", "audio", "song.mp3")
@@ -16,9 +14,13 @@ class MyController < ApplicationController
           file: File.open(audio_path, "rb")
         }
       )
-      # handle the response here
-      @transcription = response.parsed_response['text']
-    rescue RestClient::Exception => e
+
+      if response['error']
+        @transcription = response['error']['message']
+      else
+        @transcription = response['text']
+      end
+    rescue OpenAI::Error => e
       puts "An error occurred: #{e.message}"
     end
 
